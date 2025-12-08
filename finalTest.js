@@ -1,12 +1,13 @@
 // Import required modules
-const { firefox } = require("playwright"); // Browser automation
-const fs = require("fs"); // File system for writing HTML reports
+const { firefox } = require("playwright");
+// File system for writing HTML reports
+const fs = require("fs"); 
 
 // ---------------------- Helper Function ---------------------- //
-// Converts relative timestamps like "5 minutes ago", "2 hours ago", "1 day ago"
-// into total minutes so we can numerically compare articles
+// Turns "X minutes/hours/days ago" into a number
+// This lets us compare which articles are newer or older
 function parseAge(text) {
-  const parts = text.split(" "); // Split "5 minutes ago" -> ["5", "minutes", "ago"]
+  const parts = text.split(" "); // Split "5 minutes ago" to ["5", "minutes", "ago"]
   const number = parseInt(parts[0], 10); // Extract number
   const unit = parts[1]; // Extract unit (minutes, hours, days)
 
@@ -14,17 +15,17 @@ function parseAge(text) {
   if (unit.startsWith("hour")) return number * 60;
   if (unit.startsWith("day")) return number * 60 * 24;
 
-  // Fallback in case the format is unexpected
+  // Fallback in case the format is unexpected  
   return Number.MAX_SAFE_INTEGER;
 }
 
 // ---------------------- Main Function ---------------------- //
-// This function scrapes the first 100 articles from Hacker News /newest
-// Validates if they are sorted newest → oldest
-// Generates an HTML report for human review
+// This function scrapes the first 100 articles from Hacker News
+// Validates if they are sorted newest to oldest
+// Generates an HTML report for review
 async function sortHackerNewsArticles() {
-  // Launch Chromium browser in headless mode (no UI)
-  const browser = await firefox.launch({ headless: false });
+  // Launch Firefox in headless mode
+  const browser = await firefox.launch({ headless: true });
   const context = await browser.newContext();
   const page = await context.newPage();
 
@@ -42,7 +43,7 @@ async function sortHackerNewsArticles() {
     const rows = await page.$$("tr.athing");
 
     for (const row of rows) {
-      if (articles.length >= 100) break; // Stop if we already have 100
+      if (articles.length >= 100) break;
 
       // Extract title
       const title = await row.$eval(".titleline a", (el) => el.innerText);
@@ -52,7 +53,7 @@ async function sortHackerNewsArticles() {
         (el) => el.nextElementSibling.querySelector(".age").innerText
       );
 
-      // Push structured article object into array
+      // Push article info into array
       articles.push({
         title,
         ageText,
@@ -63,7 +64,7 @@ async function sortHackerNewsArticles() {
     // If less than 100 articles collected, click "More" button
     if (articles.length < 100) {
       const moreButton = await page.$("a.morelink");
-      if (!moreButton) break; // No more pages available
+      if (!moreButton) break;
       await moreButton.click();
       await page.waitForLoadState("domcontentloaded");
     }
@@ -71,7 +72,7 @@ async function sortHackerNewsArticles() {
 
   // ---------------------- Validate Count ---------------------- //
   if (articles.length !== 100) {
-    console.error(`❌ FAIL: Expected 100 articles, found ${articles.length}`);
+    console.error(`FAIL: Expected 100 articles, found ${articles.length}`);
     await browser.close();
     process.exit(1);
   }
@@ -86,23 +87,23 @@ async function sortHackerNewsArticles() {
   }
 
   // ---------------------- Output to Console ---------------------- //
-  //   console.log("\n📰 First 100 Hacker News Articles (Newest → Oldest):\n");
+  //   console.log("\n First 100 Hacker News Articles (Newest → Oldest):\n");
   //   articles.forEach((article, index) => {
   //     console.log(`${index + 1}. ${article.title} — ${article.ageText}`);
   //   });
 
   if (sorted) {
     console.log(
-      "\n🎉 SUCCESS! The first 100 articles are sorted correctly (newest → oldest)."
+      "\n SUCCESS! The first 100 articles are sorted correctly (newest to oldest)."
     );
   } else {
-    console.error("\n⚠️ FAIL: The articles are NOT sorted correctly.");
+    console.error("\n FAIL: The articles are NOT sorted correctly.");
   }
 
   // ---------------------- Generate HTML Report ---------------------- //
   const statusText = sorted
-    ? "✅ SUCCESS: Articles are correctly sorted (newest → oldest)"
-    : "❌ FAIL: Articles are NOT correctly sorted";
+    ? "SUCCESS: Articles are correctly sorted (newest → oldest)"
+    : "FAIL: Articles are NOT correctly sorted";
 
   // Create list items for HTML
   const articleListHTML = articles
@@ -172,13 +173,13 @@ async function sortHackerNewsArticles() {
 
   // Write HTML to file
   fs.writeFileSync("report.html", htmlReport);
-  console.log("\n📄 HTML report generated: report.html");
+  console.log("\n HTML report generated: report.html");
 
   // Close the browser
   await browser.close();
 }
 
-// ---------------------- Run the Function ---------------------- //
+// ---------------------- Run Main Function ---------------------- //
 (async () => {
   await sortHackerNewsArticles();
 })();
