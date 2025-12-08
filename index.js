@@ -28,6 +28,7 @@ function parseAge(text) {
 async function sortHackerNewsArticles() {
   // Launch Firefox in headless mode
   const browser = await firefox.launch({ headless: true });
+  // const browser = await chromium.launch({ headless: true });
   const context = await browser.newContext();
   const page = await context.newPage();
 
