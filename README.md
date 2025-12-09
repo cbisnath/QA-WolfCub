@@ -39,9 +39,7 @@ This project demonstrates **real-world automation**, data validation, and report
 
 ## HTML Report Preview
 
-> ![HTML Report Preview](path-to-your-html-report-image.png)
-
-Replace the `path-to-your-html-report-image.png` with the screenshot or image of your actual HTML report.
+<img width="1176" height="677" alt="Playwright-Report-Screenshot-2" src="https://github.com/user-attachments/assets/d002a9a2-05cb-4762-a8d0-f994b976f598" />
 
 ---
 
