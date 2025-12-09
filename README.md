@@ -1,5 +1,8 @@
 # Hacker News Sorting Automation
 
+<img width="1130" height="681" alt="Playwright-Report-Screenshot" src="https://github.com/user-attachments/assets/5070af10-22c0-492f-bd43-71e8b9b316f5" />
+
+
 [![Node.js](https://img.shields.io/badge/Node.js-20.15.1-brightgreen)](https://nodejs.org/)
 [![Playwright](https://img.shields.io/badge/Playwright-1.40.0-blue)](https://playwright.dev/)
 [![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
