@@ -1,59 +1,151 @@
-# 🐺 QA Wolf Take Home Assignment
+# Hacker News Sorting Automation
 
-Welcome to the QA Wolf take home assignment for our [QA Engineer](https://www.task-wolf.com/apply-qae) role! We appreciate your interest and look forward to seeing what you come up with.
+[![Node.js](https://img.shields.io/badge/Node.js-20.15.1-brightgreen)](https://nodejs.org/)
+[![Playwright](https://img.shields.io/badge/Playwright-1.40.0-blue)](https://playwright.dev/)
+[![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
+[![Status](https://img.shields.io/badge/Status-Active-success)](https://github.com/cbisnath/QA-WolfCub)
 
-## Instructions
+---
 
-This assignment has two questions as outlined below. When you are done, upload your assignment to our [application page](https://www.task-wolf.com/apply-qae):
+## Table of Contents
+- [Project Overview](#project-overview)  
+- [Quick Start](#quick-start)  
+- [Architecture & Design](#architecture--design)  
+- [Usage & Commands](#usage--commands)  
+- [Implementation Features](#implementation-features)  
+- [Learning Journey](#learning-journey)  
+- [Technical Stack](#technical-stack)  
+- [Troubleshooting](#troubleshooting)  
 
+---
 
-### Question 1
+## Project Overview
 
-In this assignment, you will create a script on [Hacker News](https://news.ycombinator.com/) using JavaScript and Microsoft's [Playwright](https://playwright.dev/) framework. 
+This project automates the **scraping and sorting validation of the first 100 Hacker News articles** from the "Newest" tab using Playwright.
 
-1. Install node modules by running `npm i`.
+It:
+- Collects article titles and timestamps
+- Converts relative timestamps into minutes for numerical comparison
+- Validates sorting order (newest → oldest)
+- Captures screenshots at key stages
+- Generates a **professional HTML report** with metrics, screenshots, and collapsible article listings
 
-2. Edit the `index.js` file in this project to go to [Hacker News/newest](https://news.ycombinator.com/newest) and validate that EXACTLY the first 100 articles are sorted from newest to oldest. You can run your script with the `node index.js` command.
+This project demonstrates **real-world automation**, data validation, and report generation in JavaScript using Playwright.
 
-Note that you are welcome to update Playwright or install other packages as you see fit, however you must utilize Playwright in this assignment.
+---
 
-### Question 2
+## HTML Report Preview
 
-Why do you want to work at QA Wolf? Please record a short, ~2 min video using [Loom](https://www.loom.com/) that includes:
+> ![HTML Report Preview](path-to-your-html-report-image.png)
 
-1. Your answer 
+Replace the `path-to-your-html-report-image.png` with the screenshot or image of your actual HTML report.
 
-2. A walk-through demonstration of your code, showing a successful execution
+---
 
-The answer and walkthrough should be combined into *one* video, and must be recorded using Loom as the submission page only accepts Loom links.
+## Quick Start
 
-## Frequently Asked Questions
+### Prerequisites
+- Node.js installed ([download](https://nodejs.org/))  
+- Git installed and your project cloned  
 
-### What is your hiring process? When will I hear about next steps?
+### Setup
+1. Install dependencies:  
+```bash
+npm install
+```
 
-This take home assignment is the first step in our hiring process, followed by a final round interview if it goes well. **We review every take home assignment submission and promise to get back to you either way within two weeks (usually sooner).** The only caveat is if we are out of the office, in which case we will get back to you when we return. If it has been more than two weeks and you have not heard from us, please do follow up.
+2. Install Playwright browser binaries:  
+```bash
+npx playwright install
+```
 
-The final round interview is a 2-hour technical work session that reflects what it is like to work here. We provide a $150 stipend for your time for the final round interview regardless of how it goes. After that, there may be a short chat with our director about your experience and the role.
+> **Why both commands?**  
+> - `npm install` installs project dependencies  
+> - `npx playwright install` downloads browsers (Chromium, Firefox) for automation  
 
-Our hiring process is rolling where we review candidates until we have filled our openings. If there are no openings left, we will keep your contact information on file and reach out when we are hiring again.
+---
 
-### Having trouble uploading your assignment?
-Be sure to delete your `node_modules` file, then zip your assignment folder prior to upload. 
+## Architecture & Design
 
-### How do you decide who to hire?
+- **Browser Choice:** Firefox (headless) is used for better DOM handling; Chromium is available as an option  
+- **Pagination Handling:** Navigates multiple pages using the "More" button to collect exactly 100 articles  
+- **Data Parsing:** Converts “X minutes/hours/days ago” into numerical minutes  
+- **Validation:** Checks sorting order and counts exactly 100 articles  
+- **Reporting:** Produces a styled HTML report with metrics, article list, screenshots, and learning notes  
 
-We evaluate candidates based on three criteria:
+**File Structure**
+```
+qa_wolf_take_home/
+├── index.js             # Main script for scraping, validation, and report generation
+├── screenshots/         # Screenshots captured during scraping
+├── report.html          # Generated HTML report
+├── package.json         # Dependencies and scripts
+└── README.md            # Project documentation
+```
 
-- Technical ability (as demonstrated in the take home and final round)
-- Customer service orientation (as this role is customer facing)
-- Alignment with our mission and values (captured [here](https://qawolf.notion.site/Mission-and-Values-859c7d0411ba41349e1b318f4e7abc8f))
+---
 
-This means whether we hire you is based on how you do during our interview process, not on your previous experience (or lack thereof). Note that you will also need to pass a background check to work here as our customers require this.
+## Usage & Commands
 
-### How can I help my application stand out?
+Run the main script to scrape, validate, and generate a report:
 
-While the assignment has clear requirements, we encourage applicants to treat it as more than a checklist. If you're genuinely excited about QA Wolf, consider going a step further—whether that means building a simple user interface, adding detailed error handling or reporting, improving the structure of the script, or anything else that showcases your unique perspective.
+```bash
+node index.js
+```
 
-There's no "right" answer—we're curious to see what you choose to do when given freedom and ambiguity. In a world where tools can help generate working code quickly and make it easier than ever to complete technical take-homes, we value originality and intentionality. If that resonates with you, use this assignment as a chance to show us how you think.
+After running:
+- `report.html` is created in the root folder  
+- Screenshots are saved in `/screenshots`  
+- Console shows success/fail message for sorting validation  
 
-Applicants who approach the assignment as a creative challenge, not just a checklist, tend to perform best in our process.
+**HTML Report Highlights**
+- ✅ Sorting validation status  
+- 🕒 Execution time  
+- 📄 Number of articles collected  
+- 📅 Timestamp of run  
+- Interactive collapsible list of articles  
+
+---
+
+## Implementation Features
+
+- **Automated Scraping:** Captures articles dynamically from Hacker News  
+- **Sorting Validation:** Converts relative timestamps into minutes and checks order  
+- **Error Handling:** Graceful handling if fewer than 100 articles are found  
+- **HTML Reporting:** Fully styled report including metrics and screenshots  
+- **Screenshot Gallery:** Step-by-step visuals for review and debugging  
+- **Flexible Browser Support:** Firefox by default; Chromium optional  
+
+---
+
+## Learning Journey
+
+This project was a **hands-on milestone** in my Playwright learning journey.  
+
+Through building this project, I gained experience in:  
+- Web scraping with Playwright  
+- Page navigation and DOM evaluation  
+- Handling asynchronous operations and promises  
+- Validating sorting logic programmatically  
+- Generating professional HTML reports with dynamic content  
+- Debugging automation workflows and capturing screenshots  
+
+> My goal was to **go beyond a basic test**: to create a **full end-to-end automated workflow** that is reusable, understandable, and professional in presentation.
+
+---
+
+## Technical Stack
+
+- **JavaScript (Node.js 20.15.1)**  
+- **Playwright** (cross-browser automation)  
+- **File System (fs module)** for report & screenshots  
+- **HTML/CSS** for styled reports  
+
+---
+
+## Troubleshooting
+
+- **Playwright browser errors:** Run `npx playwright install`  
+- **Report not generating:** Ensure `node index.js` runs without errors  
+- **Missing screenshots:** Ensure `/screenshots` folder exists or let script create it automatically
+
