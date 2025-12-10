@@ -1,5 +1,7 @@
 // Import required modules
 const { firefox } = require("playwright");
+// const { chromium } = require("playwright");
+
 // File system for writing HTML reports
 const fs = require("fs"); 
 
@@ -24,15 +26,45 @@ function parseAge(text) {
 // Validates if they are sorted newest to oldest
 // Generates an HTML report for review
 async function sortHackerNewsArticles() {
+  const startTime = Date.now(); // Start timer for execution time
+
   // Launch Firefox in headless mode
   const browser = await firefox.launch({ headless: true });
+  // const browser = await chromium.launch({ headless: true });
   const context = await browser.newContext();
   const page = await context.newPage();
+
+  // ---------------------- Viewport Testing ---------------------- //
+  // Test 3 common viewport sizes to make sure the page loads correctly
+  const viewports = [
+    { name: "desktop", width: 1280, height: 720 },
+    { name: "tablet", width: 768, height: 1024 },
+    { name: "mobile", width: 390, height: 844 }
+  ];
+
+  for (const vp of viewports) {
+    await page.setViewportSize({ width: vp.width, height: vp.height });
+    await page.goto("https://news.ycombinator.com/newest", {
+      waitUntil: "domcontentloaded",
+    });
+    await page.screenshot({ path: `screenshots/viewport_${vp.name}.png` });
+  }
+
+  // Reset viewport to desktop before continuing the real test
+  await page.setViewportSize({ width: 1280, height: 720 });
+
+  // Ensure screenshots folder exists
+  if (!fs.existsSync("screenshots")) {
+    fs.mkdirSync("screenshots");
+  }
 
   // Navigate to Hacker News newest page
   await page.goto("https://news.ycombinator.com/newest", {
     waitUntil: "domcontentloaded",
   });
+
+  // Take initial screenshot
+  await page.screenshot({ path: "screenshots/page_load.png" });
 
   // Array to hold all article objects { title, ageText, ageMinutes }
   const articles = [];
@@ -67,8 +99,14 @@ async function sortHackerNewsArticles() {
       if (!moreButton) break;
       await moreButton.click();
       await page.waitForLoadState("domcontentloaded");
+
+      // Screenshot after clicking "More"
+      await page.screenshot({ path: `screenshots/more_click.png` });
     }
   }
+
+  // Take final screenshot
+  await page.screenshot({ path: "screenshots/final_state.png" });
 
   // ---------------------- Validate Count ---------------------- //
   if (articles.length !== 100) {
@@ -100,16 +138,19 @@ async function sortHackerNewsArticles() {
     console.error("\n FAIL: The articles are NOT sorted correctly.");
   }
 
+  const endTime = Date.now();
+  const executionSeconds = ((endTime - startTime) / 1000).toFixed(2);
+
   // ---------------------- Generate HTML Report ---------------------- //
   const statusText = sorted
-    ? "SUCCESS: Articles are correctly sorted (newest → oldest)"
-    : "FAIL: Articles are NOT correctly sorted";
+    ? "✔ Test Passed — Articles correctly sorted (newest → oldest)"
+    : "❌ Test Failed — Articles are NOT correctly sorted";
 
   // Create list items for HTML
   const articleListHTML = articles
     .map(
       (article, index) => `
-      <li>
+      <li class="article-item">
         <strong>${index + 1}.</strong> ${article.title}
         <br/>
         <em>${article.ageText}</em>
@@ -118,58 +159,228 @@ async function sortHackerNewsArticles() {
     )
     .join("");
 
+  // Screenshot gallery HTML
+  const screenshotHTML = `
+    <div class="metrics-grid">
+      ${["page_load.png", "more_click.png", "final_state.png"]
+        .map(
+          (file) => `
+        <div class="metric-card">
+          <div class="metric-label">${file.replace(".png", "").replace("_", " ")}</div>
+          <img src="screenshots/${file}" class="screenshot-thumb" />
+        </div>
+      `
+        )
+        .join("")}
+    </div>
+  `;
+
   // Full HTML content
   const htmlReport = `
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8"/>
+  <meta charset="UTF-8" />
   <title>Hacker News Sorting Report</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
+      margin: 0;
+      font-family: Inter, Arial, sans-serif;
       background: #0f172a;
-      color: #e5e7eb;
-      padding: 40px;
+      color: #e2e8f0;
+      padding: 50px;
+      text-align: left;
+      line-height: 1.6;
     }
-    h1 {
-      color: #38bdf8;
+    h1, h2, h3 { margin-top: 0; font-weight: 600; }
+    .header {
+      margin-bottom: 60px;
     }
-    .status {
-      font-size: 20px;
-      margin-bottom: 20px;
-      padding: 12px;
-      border-radius: 8px;
-      background: ${sorted ? "#14532d" : "#7f1d1d"};
+    .title { font-size: 32px; color: #38bdf8; }
+    .subtitle { margin-top: 8px; font-size: 16px; color: #94a3b8; }
+    .status-badge { 
+      display:inline-block; 
+      padding:8px 14px; 
+      border-radius:20px; 
+      background:${sorted?"#14532d":"#7f1d1d"}; 
+      color:#86efac; 
+      font-weight:600; 
+      margin-top:20px; 
+      font-size:14px; 
     }
-    ul {
-      list-style: none;
-      padding: 0;
+    .metrics-grid {
+      display:grid;
+      grid-template-columns:repeat(auto-fill,minmax(240px,1fr));
+      gap: 25px;
+      margin-top: 40px;
+      margin-bottom: 60px;
     }
-    li {
+    .metric-card {
       background: #1e293b;
-      margin-bottom: 12px;
-      padding: 12px;
-      border-radius: 8px;
+      padding: 25px;
+      border-radius: 14px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+      transition: transform 0.2s, box-shadow 0.2s;
     }
+    .metric-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.6);
+    }
+    .metric-label { font-size:14px; color:#94a3b8; }
+    .metric-value { font-size:22px; margin-top:6px; color:#f8fafc; font-weight:600; }
+    .section {
+      margin-top:60px;
+      padding:20px;
+      background: #111827;
+      border-radius: 12px;
+      box-shadow: 0 6px 15px rgba(0,0,0,0.5);
+    }
+    .article-list { list-style:none; padding:0; text-align:left; }
+    .article-item {
+      background: #1e293b;
+      padding: 18px;
+      margin-bottom: 14px;
+      border-radius: 12px;
+      border-left: 5px solid #38bdf8;
+      transition: transform 0.2s, background 0.2s;
+    }
+    .article-item:hover {
+      transform: translateX(5px);
+      background: #2c3e50;
+    }
+    .article-item em { color:#94a3b8; }
+    .section-title {
+      font-size: 26px;
+      margin-bottom: 25px;
+      color: #38bdf8;
+      border-bottom: 2px solid #334155;
+      padding-bottom: 12px;
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+    .section-title:hover { color: #60a5fa; }
+    .learning-card {
+      background:#0f1f3d;
+      padding: 30px;
+      border-radius:16px;
+      margin-top:25px;
+      border-left:6px solid #38bdf8;
+      box-shadow: 0 6px 15px rgba(0,0,0,0.4);
+    }
+    .collapsible-content { display:none; padding-top:15px; transition: max-height 0.3s ease; }
+    .screenshot-thumb {
+      width:100%;
+      border-radius:10px;
+      cursor:pointer;
+      margin-top:10px;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .screenshot-thumb:hover {
+      transform: scale(1.02);
+      box-shadow: 0 6px 15px rgba(0,0,0,0.5);
+    }
+    .modal { display:none; position:fixed; z-index:999; padding-top:60px; left:0; top:0; width:100%; height:100%; overflow:auto; background-color: rgba(0,0,0,0.8); }
+    .modal-content { margin:auto; display:block; max-width:80%; max-height:80%; }
+    .close { position:absolute; top:20px; right:35px; color:#fff; font-size:40px; font-weight:bold; cursor:pointer; }
   </style>
 </head>
 <body>
 
-  <h1>Playwright Hacker News Test Report</h1>
+  <div class="header">
+    <h1 class="title">Playwright Testing - Sorting Report</h1>
+    <p class="subtitle">Automated validation of Hacker News "New" tab sorting order</p>
 
-  <div class="status">${statusText}</div>
+    <div class="status-badge">
+      ${statusText}
+    </div>
+  </div>
 
-  <p><strong>Test Run:</strong> ${new Date().toLocaleString()}</p>
+  <div class="metrics-grid">
+    <div class="metric-card">
+      <div class="metric-label">🕒 Execution Time</div>
+      <div class="metric-value">${executionSeconds}s</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">📄 Articles Scanned</div>
+      <div class="metric-value">${articles.length}</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">✅ Validation Result</div>
+      <div class="metric-value">${sorted?"Success":"Fail"}</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">📅 Run Timestamp</div>
+      <div class="metric-value">${new Date().toLocaleString()}</div>
+    </div>
+  </div>
 
-  <h2>First 100 Articles</h2>
-  <ul>
-    ${articleListHTML}
-  </ul>
+  <div class="section">
+    <h2 class="section-title" onclick="toggleCollapse('articles')">First 100 Articles - <span style="font-size: 16px;">Click to Expand</span></h2>
+    <div id="articles" class="collapsible-content">
+      <ul class="article-list">
+        ${articleListHTML}
+      </ul>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2 class="section-title">Screenshots</h2>
+    ${screenshotHTML}
+  </div>
+
+  <!-- Modal for screenshots -->
+  <div id="modal" class="modal">
+    <span class="close">&times;</span>
+    <img class="modal-content" id="modal-img" />
+  </div>
+
+  <div class="section">
+    <h2 class="section-title" onclick="toggleCollapse('learning')">Learning Journey - <span style="font-size: 16px;">Click to Expand</span></h2>
+    <div id="learning" class="collapsible-content">
+      <div class="learning-card">
+        <p>
+          This project was a major hands-on milestone in my Playwright learning journey. I learned how to scrape real-world data, handle page navigation, validate sorting logic, capture screenshots, and produce a visually polished HTML report that resembles a real QA engineer’s output.
+        </p>
+
+        <p>
+          It helped me strengthen experience with:
+          <strong>DOM evaluation, Playwright selectors, test assertions,
+          HTML report generation, and debugging using headed mode.</strong>
+        </p>
+
+        <p>
+          My goal was to build a real-world validation tool that goes beyond a simple test—
+          a full automated workflow that collects data, evaluates it, and produces a
+          clean, visual, professional report.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function toggleCollapse(id){
+      const el = document.getElementById(id);
+      if(el.style.display === 'block') el.style.display='none';
+      else el.style.display='block';
+    }
+
+    // Screenshot modal functionality
+    const modal = document.getElementById("modal");
+    const modalImg = document.getElementById("modal-img");
+    const closeBtn = document.querySelector(".close");
+    document.querySelectorAll(".screenshot-thumb").forEach(img => {
+      img.onclick = () => {
+        modal.style.display = "block";
+        modalImg.src = img.src;
+      }
+    });
+    closeBtn.onclick = () => { modal.style.display = "none"; }
+    window.onclick = (e) => { if (e.target == modal) modal.style.display = "none"; }
+  </script>
 
 </body>
 </html>
-`;
+  `;
 
   // Write HTML to file
   fs.writeFileSync("report.html", htmlReport);
