@@ -32,6 +32,7 @@ It:
 - Validates sorting order (newest → oldest)
 - Captures screenshots at key stages
 - Generates a **professional HTML report** with metrics, screenshots, and collapsible article listings
+- Performs **viewport testing** by capturing screenshots for desktop, tablet, and mobile sizes, saved in the `/screenshots` folder
 
 This project demonstrates **real-world automation**, data validation, and report generation in JavaScript using Playwright.
 
